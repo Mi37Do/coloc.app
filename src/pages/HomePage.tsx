@@ -17,7 +17,8 @@ import {
 } from '@/services/households'
 import { useUnreadCount } from '@/services/notifications'
 import { useShoppingLists } from '@/services/shopping'
-import { useBalances } from '@/services/bills'
+import { useBills } from '@/services/bills'
+import { monthTotal } from '@/features/bills/bill-utils'
 import { formatMoney } from '@/utils/money'
 import { useAuthStore, useUiStore } from '@/stores'
 import type { Chore, Household } from '@/types/api'
@@ -220,12 +221,9 @@ function Board({ household, day }: { household: Household; day: Date }) {
 
 /** Shopping and Bills at a glance, one tap from Home */
 function QuickTiles({ householdId }: { householdId: string }) {
-  const meId = useAuthStore((state) => state.user?.id)
   const { data: lists } = useShoppingLists(householdId)
-  const { data: balances } = useBalances(householdId)
+  const { data: bills } = useBills(householdId)
   const toBuy = lists?.reduce((sum, l) => sum + (l.remainingCount ?? 0), 0)
-  const mine = balances?.[0]
-  const net = mine?.members.find((m) => m.userId === meId)?.netCents ?? 0
 
   const tile = 'panel flex min-h-28 flex-col justify-between gap-3 p-4 transition-transform active:scale-[0.98]'
   return (
@@ -244,7 +242,7 @@ function QuickTiles({ householdId }: { householdId: string }) {
           </span>
         </span>
       </Link>
-      <Link to="/bills" className={cn(tile, net < 0 ? 'panel--blush' : 'panel--mint')}>
+      <Link to="/bills" className={cn(tile, 'panel--mint')}>
         <span className="flex items-center justify-between">
           <span className="text-3xl" aria-hidden>
             🧾
@@ -254,13 +252,7 @@ function QuickTiles({ householdId }: { householdId: string }) {
         <span>
           <span className="block font-bold">Bills</span>
           <span className="block text-sm font-semibold tabular-nums">
-            {!balances
-              ? '…'
-              : net > 0
-                ? `You're owed ${formatMoney(net, mine!.currency)}`
-                : net < 0
-                  ? `You owe ${formatMoney(-net, mine!.currency)}`
-                  : 'All square'}
+            {bills ? `${formatMoney(monthTotal(bills))} this month` : '…'}
           </span>
         </span>
       </Link>

@@ -1,39 +1,38 @@
 import type { Bill } from '@/types/api'
-import { myStatus } from './bill-utils'
+import { byCategory, monthTotal } from './bill-utils'
 
-const bill = (paidById: string, shares: [string, number, boolean][]): Bill => ({
-  id: 'b',
+const now = new Date(2026, 9, 15)
+const bill = (category: Bill['category'], amountCents: number, createdAt: Date): Bill => ({
+  id: String(Math.random()),
   householdId: 'h',
-  title: 'Rent',
-  category: 'rent',
-  amountCents: shares.reduce((s, [, c]) => s + c, 0),
-  currency: 'EUR',
-  paidById,
+  title: 'x',
+  category,
+  amountCents,
+  currency: 'DZD',
+  paidById: null,
   paidBy: null,
   dueDate: null,
-  createdById: paidById,
-  createdAt: '',
-  shares: shares.map(([userId, amountCents, settled]) => ({
-    id: userId,
-    billId: 'b',
-    userId,
-    amountCents,
-    settledAt: settled ? '2026-10-01' : null,
-  })),
+  shares: [],
+  createdById: null,
+  createdAt: createdAt.toISOString(),
 })
 
-describe('myStatus', () => {
-  it("is what others still owe when I paid", () => {
-    expect(myStatus(bill('me', [['me', 300, true], ['a', 300, false], ['b', 300, true]]), 'me')).toEqual({ kind: 'owed', cents: 300 })
-    expect(myStatus(bill('me', [['me', 300, true], ['a', 300, true]]), 'me')).toEqual({ kind: 'settled' })
-  })
+const bills = [
+  bill('rent', 90000, new Date(2026, 9, 2)),
+  bill('groceries', 6000, new Date(2026, 9, 9)),
+  bill('groceries', 4000, new Date(2026, 9, 12)),
+  bill('utilities', 99999, new Date(2026, 8, 30)), // September: ignored
+]
 
-  it('is my unpaid share when someone else paid', () => {
-    expect(myStatus(bill('a', [['a', 500, true], ['me', 500, false]]), 'me')).toEqual({ kind: 'owe', cents: 500 })
-    expect(myStatus(bill('a', [['a', 500, true], ['me', 500, true]]), 'me')).toEqual({ kind: 'settled' })
-  })
+describe('monthTotal', () => {
+  it('sums only this month', () => expect(monthTotal(bills, now)).toBe(100000))
+})
 
-  it("is none when I'm not on the bill", () => {
-    expect(myStatus(bill('a', [['a', 500, true], ['b', 500, false]]), 'me')).toEqual({ kind: 'none' })
+describe('byCategory', () => {
+  it('groups this month by category, biggest first', () => {
+    expect(byCategory(bills, now)).toEqual([
+      { category: 'rent', cents: 90000 },
+      { category: 'groceries', cents: 10000 },
+    ])
   })
 })

@@ -165,14 +165,6 @@ export type CreateBillInput = {
   | { split: 'custom'; shares: { userId: string; amountCents: number }[] }
 )
 
-/** GET /bills/balances: one entry per currency */
-export type Balances = {
-  currency: string
-  /** Positive: the household owes them. Negative: they owe. */
-  members: { userId: string; netCents: number }[]
-  owes: { fromUserId: string; toUserId: string; amountCents: number }[]
-}[]
-
 // ── Chat ──────────────────────────────────────────────────────
 
 export type Message = {

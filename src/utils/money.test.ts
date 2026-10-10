@@ -1,7 +1,7 @@
-import { parseMoney, splitEvenly } from './money'
+import { formatMoney, parseMoney } from './money'
 
 describe('parseMoney', () => {
-  it('accepts dots, commas and up to 2 decimals', () => {
+  it('accepts dots, commas, spaces and up to 2 decimals', () => {
     expect(parseMoney('12')).toBe(1200)
     expect(parseMoney('12,5')).toBe(1250)
     expect(parseMoney('12.05')).toBe(1205)
@@ -16,10 +16,8 @@ describe('parseMoney', () => {
   })
 })
 
-describe('splitEvenly', () => {
-  it('always adds up to the total', () => {
-    expect(splitEvenly(1000, 3)).toEqual([334, 333, 333])
-    expect(splitEvenly(999, 3)).toEqual([333, 333, 333])
-    expect(splitEvenly(5, 0)).toEqual([])
+describe('formatMoney', () => {
+  it('always uses dinars', () => {
+    expect(formatMoney(450000)).toMatch(/DZD|د\.ج/)
   })
 })
