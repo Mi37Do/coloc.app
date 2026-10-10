@@ -78,11 +78,19 @@ pnpm android:run    # build, sync and run on a connected device or emulator
 pnpm cap:sync       # only build + sync (after changing web code)
 ```
 
-- The phone can't reach `localhost`. `.env.android` (not committed) sets `VITE_API_URL`:
-  `http://10.0.2.2:3000` for the Android emulator, or `http://<your-PC-LAN-IP>:3000` for a real phone on the same Wi-Fi.
-- Capacitor 8 needs **JDK 21**. If Gradle fails with "invalid source release: 21", set `JAVA_HOME` to Android Studio's bundled JDK
-  (`C:\Program Files\Android\Android Studio\jbr`) and `ANDROID_HOME` to your SDK.
+- The phone can't reach `localhost`. `.env.android` (not committed) sets `VITE_API_URL` to the address of the PC running the API:
+  **its Tailscale address** (`tailscale ip -4`), e.g. `http://100.116.9.52:3000`, which works from a real phone and from the emulator,
+  as long as the Tailscale app is signed in to the same tailnet and connected on the phone. (Emulator only: `http://10.0.2.2:3000`.)
+- Tailscale traffic is already encrypted, so plain `http` to a `100.x` address is fine for development.
+- Capacitor 8 needs **JDK 21**. If Gradle fails with "invalid source release: 21" (or a "class file major version" error), set `JAVA_HOME` to a JDK 21, e.g. `~/.jdks/jbr-21.0.11`
+  and `ANDROID_HOME` to your SDK (Android Studio's bundled Java 25 is too new for this Gradle).
 - Invite links open the app through `coloc://join/<token>`.
 - `capacitor.config.ts` allows plain-http API calls for development. Remove `cleartext`, `allowMixedContent` and
   `usesCleartextTraffic` in `AndroidManifest.xml` when the API is served over https.
 - iOS isn't added: it needs a Mac (`pnpm add @capacitor/ios && npx cap add ios`).
+
+### Native plugins in use
+
+`app` (back button, invite deep links), `splash-screen`, `keyboard`, `haptics` (chore done), `share` and `clipboard` (invite sheet),
+`camera` (event photos from camera or gallery), `network` (offline banner). Safe areas use Capacitor's built-in `SystemBars`
+(edge-to-edge, `--safe-area-inset-*` CSS variables). Not included: push notifications, which need a Firebase project.

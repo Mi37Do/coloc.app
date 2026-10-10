@@ -19,6 +19,7 @@ import {
   useSetCancelled,
   useUploadPhotos,
 } from '@/services/events'
+import { pickPhotos } from '@/lib/native'
 import { useActiveHousehold, useMembers } from '@/services/households'
 import { useAuthStore } from '@/stores'
 import type { HouseholdEvent, Media, Member, RsvpResponse } from '@/types/api'
@@ -196,14 +197,24 @@ function Photos({ householdId, eventId, meId, isAdmin }: { householdId: string; 
   const input = useRef<HTMLInputElement>(null)
   const [viewing, setViewing] = useState<Media>()
 
-  const onFiles = (files: FileList | null) => {
-    const list = [...(files ?? [])].slice(0, 10)
+  const send = (list: File[]) => {
     if (!list.length) return
-    upload.mutate(list, {
+    upload.mutate(list.slice(0, 10), {
       onSuccess: (added) => toast.success(`${added.length} ${added.length === 1 ? 'photo' : 'photos'} added`),
       onError: (e) => toast.error(apiErrorMessage(e, 'Could not upload. Images up to 10 MB.')),
     })
+  }
+
+  const onFiles = (files: FileList | null) => {
+    send([...(files ?? [])])
     if (input.current) input.current.value = ''
+  }
+
+  // In the app: camera or gallery. In a browser: the file picker.
+  const addPhotos = async () => {
+    const picked = await pickPhotos()
+    if (picked) send(picked)
+    else input.current?.click()
   }
 
   return (
@@ -214,7 +225,7 @@ function Photos({ householdId, eventId, meId, isAdmin }: { householdId: string; 
         </h2>
         <button
           className="pill pill--light min-h-10 px-3.5 py-1.5 text-sm"
-          onClick={() => input.current?.click()}
+          onClick={addPhotos}
           disabled={upload.isPending}
         >
           <ImagePlus size={17} aria-hidden /> {upload.isPending ? 'Uploading…' : 'Add photos'}

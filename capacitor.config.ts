@@ -27,9 +27,12 @@ const config: CapacitorConfig = {
       // Shrink the page above the keyboard so the chat box and sheets stay visible
       resize: 'body',
     },
-    StatusBar: {
-      backgroundColor: '#D8ECC2',
-      style: 'LIGHT',
+    // Edge-to-edge: the web view draws under the system bars and Capacitor injects
+    // --safe-area-inset-* CSS variables (see src/assets/main.css).
+    SystemBars: {
+      insetsHandling: 'css',
+      // The page already sets viewport-fit=cover; telling Capacitor up front avoids a layout jump
+      initialViewportFitValueHint: 'cover',
     },
   },
 }

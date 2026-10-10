@@ -3,6 +3,7 @@ import { Copy, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { Button } from '@/components/ui/Button'
+import { copyText, shareContent } from '@/lib/native'
 import { useCreateInvite } from '@/services/invites'
 import { apiErrorMessage, apiStatus } from '@/utils/api-error'
 
@@ -27,22 +28,15 @@ export function InviteSheet({ householdId, householdName, open, onClose }: Props
   }, [open, mutate, reset])
 
   const copy = async (text: string, what: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      toast.success(`${what} copied`)
-    } catch {
-      toast.error('Could not copy')
-    }
+    if (await copyText(text)) toast.success(`${what} copied`)
+    else toast.error('Could not copy')
   }
 
   const share = async () => {
     if (!invite) return
     const text = `Join ${householdName} on coloc with code ${invite.displayCode}, or open this link:`
-    if (navigator.share) {
-      await navigator.share({ title: `Join ${householdName}`, text, url: invite.url }).catch(() => {})
-    } else {
-      await copy(`${text} ${invite.url}`, 'Invite')
-    }
+    const shared = await shareContent({ title: `Join ${householdName}`, text, url: invite.url })
+    if (!shared) await copy(`${text} ${invite.url}`, 'Invite')
   }
 
   return (
