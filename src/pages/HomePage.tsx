@@ -23,6 +23,7 @@ import { formatMoney } from '@/utils/money'
 import { useAuthStore, useUiStore } from '@/stores'
 import type { Chore, Household } from '@/types/api'
 import { apiErrorMessage } from '@/utils/api-error'
+import { success } from '@/lib/native'
 import { greeting, isSameDay, startOfDay } from '@/utils/dates'
 import { cn } from '@/utils/cn'
 
@@ -122,7 +123,11 @@ function Board({ household, day }: { household: Household; day: Date }) {
 
   const onToggle = (chore: Chore) =>
     toggle.mutate(chore, {
-      onSuccess: () => chore.status === 'todo' && toast.success(`Nice, "${chore.title}" is done`),
+      onSuccess: () => {
+        if (chore.status !== 'todo') return
+        success()
+        toast.success(`Nice, "${chore.title}" is done`)
+      },
       onError: (e) => toast.error(apiErrorMessage(e, 'Could not update the chore')),
     })
 

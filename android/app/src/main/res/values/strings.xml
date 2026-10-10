@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">coloc</string>
+    <string name="title_activity_main">coloc</string>
+    <string name="package_name">coloc.app</string>
+    <string name="custom_url_scheme">coloc.app</string>
+</resources>

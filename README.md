@@ -67,3 +67,22 @@ Imports use the `@` alias for `src`, e.g. `import { api } from '@/services/api'`
 | `v-if` / `v-for` | `{cond && <X />}` / `{items.map(...)}` |
 | `v-model` | `value` + `onChange`, or React Hook Form's `register()` |
 | `app.use(plugin)` | wrap in a provider in `app/providers` |
+
+## Native app (Capacitor)
+
+The web app is wrapped as an Android app with [Capacitor](https://capacitorjs.com).
+
+```bash
+pnpm android        # build the web app, sync it, open Android Studio
+pnpm android:run    # build, sync and run on a connected device or emulator
+pnpm cap:sync       # only build + sync (after changing web code)
+```
+
+- The phone can't reach `localhost`. `.env.android` (not committed) sets `VITE_API_URL`:
+  `http://10.0.2.2:3000` for the Android emulator, or `http://<your-PC-LAN-IP>:3000` for a real phone on the same Wi-Fi.
+- Capacitor 8 needs **JDK 21**. If Gradle fails with "invalid source release: 21", set `JAVA_HOME` to Android Studio's bundled JDK
+  (`C:\Program Files\Android\Android Studio\jbr`) and `ANDROID_HOME` to your SDK.
+- Invite links open the app through `coloc://join/<token>`.
+- `capacitor.config.ts` allows plain-http API calls for development. Remove `cleartext`, `allowMixedContent` and
+  `usesCleartextTraffic` in `AndroidManifest.xml` when the API is served over https.
+- iOS isn't added: it needs a Mac (`pnpm add @capacitor/ios && npx cap add ios`).

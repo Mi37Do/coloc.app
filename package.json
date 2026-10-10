@@ -9,9 +9,20 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "cap:sync": "tsc -b && vite build --mode android && cap sync android",
+    "android": "pnpm cap:sync && cap open android",
+    "android:run": "pnpm cap:sync && cap run android"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/cli": "8.5.3",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/keyboard": "8.0.6",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "8.0.4",
     "@headlessui/react": "^2.2.10",
     "@hookform/resolvers": "^5.9.1",
     "@preact/signals-react": "^3.12.0",
