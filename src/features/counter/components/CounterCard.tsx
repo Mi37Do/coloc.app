@@ -13,13 +13,13 @@ export function CounterCard() {
       </p>
       <p>Double: {counter.double.value}</p>
       <div className="flex gap-2">
-        <Button aria-label="Decrement" variant="secondary" onClick={counter.decrement}>
+        <Button aria-label="Decrement" variant="light" onClick={counter.decrement}>
           <Minus size={16} />
         </Button>
         <Button aria-label="Increment" onClick={counter.increment}>
           <Plus size={16} />
         </Button>
-        <Button aria-label="Reset" variant="secondary" onClick={counter.reset}>
+        <Button aria-label="Reset" variant="light" onClick={counter.reset}>
           <RotateCcw size={16} />
         </Button>
       </div>

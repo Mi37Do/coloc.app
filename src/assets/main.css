@@ -1,7 +1,346 @@
-@import 'tailwindcss';
+@import url("https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&family=Zilla+Slab:wght@500;600;700&display=swap");
+@import "tailwindcss";
 
+/*
+ * coloc design system
+ * Reference: Dribbble "Mobile Chore Management App" (Anna D.)
+ *
+ * The screen is a black canvas with rounded panels stacked on it. Panels carry
+ * the colour (mint header, white info, butter tasks); black is the accent for
+ * active pills, icon buttons and the tab bar. Titles use a slab serif.
+ */
+@theme {
+  --color-ink: #0b0b0b;
+  --color-paper: #ffffff;
+  --color-ivory: #f6f4f2;
+  --color-mint: #d8ecc2;
+  --color-sage: #b5dc8d;
+  --color-butter: #faecaa;
+  --color-sky: #c6effc;
+  --color-blush: #f8cec1;
+  --color-muted-ink: #55564f;
+  --color-neutral-gray: #a2a39f;
+  --color-line: #e7e5e1;
+
+  --font-sans: "Raleway", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Zilla Slab", ui-serif, Georgia, serif;
+
+  --radius-panel: 1.75rem;
+  --radius-tile: 1.25rem;
+  --shadow-floating: 0 12px 36px rgb(11 11 11 / 18%);
+}
+
+:root {
+  color-scheme: light;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Base */
 @layer base {
   html {
-    color-scheme: light dark;
+    min-height: 100%;
+    background: var(--color-mint);
+  }
+
+  body {
+    min-height: 100dvh;
+    margin: 0;
+    background: var(--color-mint);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.45;
+    font-variant-numeric: lining-nums;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 3px solid #5bb8e0;
+    outline-offset: 2px;
+  }
+}
+
+/* Components live in a layer so Tailwind utilities (bg-*, p-*, size-*) can override them */
+@layer components {
+  /* ── Surfaces ─────────────────────────────────────────────── */
+
+  /* The phone-width column: a black canvas the panels sit on */
+  .canvas {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    width: 100%;
+    max-width: 28rem;
+    min-height: 100dvh;
+    margin-inline: auto;
+    background: var(--color-ink);
+  }
+
+  @media (min-width: 30rem) {
+    .canvas {
+      min-height: calc(100dvh - 2rem);
+      margin-block: 1rem;
+      border-radius: 2.5rem;
+      padding-block: 0.375rem;
+      overflow: clip; /* not hidden: that would break the sticky tab bar */
+      box-shadow: var(--shadow-floating);
+    }
+  }
+
+  .panel {
+    border-radius: var(--radius-panel);
+    background: var(--color-paper);
+    padding: 1.25rem;
+  }
+
+  .panel--mint {
+    background: var(--color-mint);
+  }
+  .panel--butter {
+    background: var(--color-butter);
+  }
+  .panel--sky {
+    background: var(--color-sky);
+  }
+  .panel--blush {
+    background: var(--color-blush);
+  }
+
+  /* Content cards that sit inside a panel */
+  .tile {
+    border-radius: var(--radius-tile);
+    background: var(--color-paper);
+    padding: 1rem;
+  }
+
+  .tile--outline {
+    border: 1.5px solid var(--color-ink);
+  }
+
+  /* ── Controls ─────────────────────────────────────────────── */
+
+  .pill {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border: 1.5px solid var(--color-ink);
+    border-radius: 999px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    font-weight: 700;
+    transition:
+      transform 140ms ease,
+      background-color 140ms ease,
+      opacity 140ms ease;
+  }
+
+  .pill:active {
+    transform: scale(0.98);
+  }
+  .pill:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+  .pill--light {
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+  .pill--blush {
+    background: var(--color-blush);
+    color: var(--color-ink);
+  }
+  .pill--mint {
+    background: var(--color-mint);
+    color: var(--color-ink);
+  }
+
+  /* Round black icon button (bell, back, edit) */
+  .icon-btn {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    transition: transform 140ms ease;
+  }
+
+  .icon-btn:active {
+    transform: scale(0.94);
+  }
+  .icon-btn--light {
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  /* Two-option switch: My tasks / Roomies tasks, Information / Progress */
+  .segmented {
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    padding: 0.25rem;
+    border-radius: 999px;
+    background: var(--color-paper);
+  }
+
+  .segmented > button {
+    min-height: 44px;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-ink);
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
+  }
+
+  .segmented > button[aria-selected="true"],
+  .segmented > button[aria-checked="true"],
+  .segmented > button[aria-pressed="true"] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  .field {
+    width: 100%;
+    min-height: 50px;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--color-ink);
+    border-radius: 1rem;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+
+  .field::placeholder {
+    color: var(--color-neutral-gray);
+    font-weight: 500;
+  }
+  .field:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgb(181 220 141 / 60%);
+  }
+  .field[aria-invalid="true"] {
+    border-color: #b42318;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: var(--color-ivory);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  /* Black track with a light, outlined fill: the reference's progress bar */
+  .meter {
+    position: relative;
+    height: 0.75rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--color-ink);
+  }
+
+  .meter > span {
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    border: 1.5px solid var(--color-ink);
+    border-radius: 999px;
+    background: var(--color-butter);
+    transition: width 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .meter--light > span {
+    background: var(--color-ivory);
+  }
+
+  /* Floating panels for Select, Combobox and date pickers (anchored by Headless UI) */
+  .popover {
+    z-index: 60;
+    border: 1.5px solid var(--color-ink);
+    border-radius: 1.25rem;
+    background: var(--color-paper);
+    box-shadow: var(--shadow-floating);
+    padding: 0.375rem;
+    outline: none;
+    --anchor-gap: 6px;
+    --anchor-padding: 12px;
+    scrollbar-width: thin;
+    scroll-padding-block: 0.375rem;
+    transition: opacity 140ms ease, transform 140ms ease;
+    transform-origin: top;
+  }
+
+  .popover[data-closed] {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  .option {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    gap: 0.625rem;
+    border-radius: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .option[data-focus] {
+    background: var(--color-ivory);
+  }
+
+  .option[data-selected] {
+    font-weight: 800;
+  }
+
+  .option[data-disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Horizontal chip rows: scroll by touch/trackpad, no bar */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .muted {
+    color: var(--color-muted-ink);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

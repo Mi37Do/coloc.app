@@ -2,10 +2,13 @@ import { Link } from 'react-router'
 
 export function NotFoundPage() {
   return (
-    <section className="flex flex-col gap-4">
-      <h1 className="text-3xl font-bold tracking-tight">404</h1>
-      <p>This page does not exist.</p>
-      <Link className="text-blue-600 underline dark:text-blue-400" to="/">
+    <section className="panel panel--butter flex flex-1 flex-col items-center justify-center gap-3 text-center">
+      <span className="text-6xl" aria-hidden>
+        🧦
+      </span>
+      <h1 className="font-display text-[32px]">Lost sock</h1>
+      <p className="muted font-medium">This page doesn't exist.</p>
+      <Link className="pill mt-2" to="/">
         Back home
       </Link>
     </section>

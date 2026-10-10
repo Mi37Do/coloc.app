@@ -6,6 +6,8 @@ type ConfirmDialogProps = {
   title: string
   description?: string
   confirmLabel?: string
+  /** Blush confirm button for leaving, deleting and signing out */
+  destructive?: boolean
   onConfirm: () => void
   onClose: () => void
 }
@@ -17,6 +19,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = 'Confirm',
+  destructive = false,
   onConfirm,
   onClose,
 }: ConfirmDialogProps) {
@@ -24,22 +27,21 @@ export function ConfirmDialog({
     <Dialog open={open} onClose={onClose} className="relative z-50">
       <DialogBackdrop
         transition
-        className="fixed inset-0 bg-black/40 transition-opacity duration-200 data-closed:opacity-0"
+        className="fixed inset-0 bg-ink/50 transition-opacity duration-200 data-closed:opacity-0"
       />
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <DialogPanel
           transition
-          className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 text-slate-900 shadow-xl transition duration-200 data-closed:scale-95 data-closed:opacity-0 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+          className="panel w-full max-w-sm border-2 border-ink transition duration-200 data-closed:scale-95 data-closed:opacity-0"
         >
-          <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
-          {description && (
-            <Description className="mt-2 text-sm text-slate-500 dark:text-slate-400">{description}</Description>
-          )}
-          <div className="mt-6 flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>
+          <DialogTitle className="font-display text-2xl">{title}</DialogTitle>
+          {description && <Description className="muted mt-2 font-medium">{description}</Description>}
+          <div className="mt-6 grid grid-cols-2 gap-2">
+            <Button variant="light" onClick={onClose}>
               Cancel
             </Button>
             <Button
+              variant={destructive ? 'blush' : 'dark'}
               onClick={() => {
                 onConfirm()
                 onClose()
