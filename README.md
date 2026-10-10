@@ -83,7 +83,8 @@ pnpm cap:sync       # only build + sync (after changing web code)
   as long as the Tailscale app is signed in to the same tailnet and connected on the phone. (Emulator only: `http://10.0.2.2:3000`.)
 - Tailscale traffic is already encrypted, so plain `http` to a `100.x` address is fine for development.
 - Capacitor 8 needs **JDK 21**. If Gradle fails with "invalid source release: 21" (or a "class file major version" error), set `JAVA_HOME` to a JDK 21, e.g. `~/.jdks/jbr-21.0.11`
-  and `ANDROID_HOME` to your SDK (Android Studio's bundled Java 25 is too new for this Gradle).
+  and `ANDROID_HOME` to your SDK. `android/gradle/gradle-daemon-jvm.properties` already pins Gradle to Java 21 (Android Studio's bundled Java 25 is too new for Gradle 8.14).
+  If Android Studio still says "Incompatible Gradle JVM", open Settings > Build Tools > Gradle and set **Gradle JDK** to a JDK 21 (e.g. `jbr-21`), then sync.
 - Invite links open the app through `coloc://join/<token>`.
 - `capacitor.config.ts` allows plain-http API calls for development. Remove `cleartext`, `allowMixedContent` and
   `usesCleartextTraffic` in `AndroidManifest.xml` when the API is served over https.
