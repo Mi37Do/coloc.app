@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "463249692631",
+    "project_id": "coloc-65a02",
+    "storage_bucket": "coloc-65a02.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:463249692631:android:1392b4f7e7bdf47334dd92",
+        "android_client_info": {
+          "package_name": "com.coloc.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbqOt0HuAAUvMTMk3xS66yP-eMLZgP-kc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

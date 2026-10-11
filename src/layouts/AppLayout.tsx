@@ -3,6 +3,7 @@ import { NavLink, Outlet, useMatches } from 'react-router'
 import { CalendarDays, House, MessageCircle, Plus, Settings } from 'lucide-react'
 import { AddChoreSheet } from '@/features/chores'
 import { useActiveHousehold } from '@/services/households'
+import { usePushNotifications } from '@/services/push'
 import { useRealtime } from '@/services/realtime'
 import { useUiStore } from '@/stores'
 import { cn } from '@/utils/cn'
@@ -30,13 +31,14 @@ export function AppLayout() {
   }, [title])
 
   useRealtime()
+  usePushNotifications()
   const { active } = useActiveHousehold()
   const addChoreOpen = useUiStore((state) => state.addChoreOpen)
   const setAddChoreOpen = useUiStore((state) => state.setAddChoreOpen)
 
   return (
     <div className="canvas">
-      <main className="flex flex-1 flex-col gap-1.5">
+      <main className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
         <Outlet />
       </main>
 

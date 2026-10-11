@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { TopPanel } from '@/components/ui/TopPanel'
 import { useHouseholds } from '@/services/households'
+import { unregisterPush } from '@/services/push'
 import { useAuthStore } from '@/stores'
 import { cn } from '@/utils/cn'
 
@@ -104,7 +105,9 @@ export function ProfilePage() {
         description="You will need to sign in again to see your household."
         confirmLabel="Sign out"
         destructive
-        onConfirm={() => {
+        onConfirm={async () => {
+          // Before logout: the request still needs the session token
+          await unregisterPush()
           logout()
           queryClient.clear()
           navigate('/login')

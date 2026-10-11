@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { Bell, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
@@ -70,6 +70,7 @@ function Header({ day, onDay }: { day: Date; onDay: (d: Date) => void }) {
           {bell}
         </>
       }
+      extra={<WeekStrip day={day} onDay={onDay} />}
     >
       <div className="flex items-center gap-3">
         {user && <Avatar person={user} size="lg" />}
@@ -119,6 +120,22 @@ function Board({ household, day }: { household: Household; day: Date }) {
   const isAdmin = members.some((m) => m.userId === me?.id && m.role === 'admin')
   const isToday = isSameDay(day, new Date())
 
+  // The page scrolls first; once the tasks panel fills the view, only the list scrolls
+  const sectionRef = useRef<HTMLElement>(null)
+  const [pinned, setPinned] = useState(false)
+  useEffect(() => {
+    const page = sectionRef.current?.closest('main')
+    if (!page) return
+    const update = () => setPinned(page.scrollTop + page.clientHeight >= page.scrollHeight - 1)
+    update()
+    page.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    return () => {
+      page.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+    }
+  }, [])
+
   const onToggle = (chore: Chore) =>
     toggle.mutate(chore, {
       onSuccess: () => chore.status === 'todo' && toast.success(`Nice, "${chore.title}" is done`),
@@ -145,7 +162,11 @@ function Board({ household, day }: { household: Household; day: Date }) {
 
       <QuickTiles householdId={household.id} />
 
-      <section className="panel panel--butter flex flex-1 flex-col gap-4 pb-6" aria-labelledby="tasks-title">
+      <section
+        ref={sectionRef}
+        className="panel panel--butter flex h-[calc(100%-var(--top-bar-h,0px))] shrink-0 flex-col gap-4 pb-6"
+        aria-labelledby="tasks-title"
+      >
         <h2 id="tasks-title" className="text-[17px] font-bold">
           {isToday ? "Today's tasks" : `${longDayFmt.format(day)}'s tasks`}
         </h2>
@@ -183,8 +204,8 @@ function Board({ household, day }: { household: Household; day: Date }) {
             </Button>
           </div>
         ) : (
-          <>
-            <ul className="flex flex-col gap-2.5">
+          <div className={cn('flex min-h-0 flex-1 flex-col gap-4', pinned ? 'overflow-y-auto' : 'overflow-hidden')}>
+            <ul className="flex shrink-0 flex-col gap-2.5 *:shrink-0">
               {visible.map((chore) => (
                 <TaskCard
                   key={chore.id}
@@ -198,7 +219,7 @@ function Board({ household, day }: { household: Household; day: Date }) {
               ))}
             </ul>
             <p className="muted text-center text-xs font-semibold">Tap or swipe a task for actions</p>
-          </>
+          </div>
         )}
       </section>
 
