@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router'
 import { ArrowLeft, ArrowUp, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Avatar, AvatarStack } from '@/components/ui/Avatar'
+import { GifImage, GifPicker } from '@/features/chat/GifPicker'
 import { useConversations, useDeleteMessage, useLoadOlder, useMarkRead, useMessages, useSendMessage } from '@/services/chat'
 import { useActiveHousehold, useMembers } from '@/services/households'
 import { emitTyping, useTypingStore } from '@/services/realtime'
@@ -32,6 +33,7 @@ function Thread({ householdId, conversationId }: { householdId: string; conversa
   const markRead = useMarkRead(householdId, conversationId)
   const loadOlder = useLoadOlder(householdId, conversationId)
   const remove = useDeleteMessage(householdId, conversationId)
+  const [gifsOpen, setGifsOpen] = useState(false)
   const typingIds = Object.keys(useTypingStore((state) => state.typing[conversationId]) ?? {})
 
   const [text, setText] = useState('')
@@ -64,8 +66,12 @@ function Thread({ householdId, conversationId }: { householdId: string; conversa
     const body = text.trim()
     if (!body) return
     setText('')
-    send.mutate(body, { onError: (err) => toast.error(apiErrorMessage(err, 'Message not sent')) })
+    send.mutate({ body }, { onError: (err) => toast.error(apiErrorMessage(err, 'Message not sent')) })
   }
+
+  // A GIF goes out on its own; any typed text stays in the box
+  const sendGif = (gifId: string) =>
+    send.mutate({ gifId }, { onError: (err) => toast.error(apiErrorMessage(err, 'GIF not sent')) })
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Enter sends on desktop; Shift+Enter for a new line
@@ -155,6 +161,7 @@ function Thread({ householdId, conversationId }: { householdId: string; conversa
                     <p className="muted my-3 text-center text-xs font-bold">{dayFmt.format(new Date(m.createdAt))}</p>
                   )}
                   <Bubble
+                    householdId={householdId}
                     message={m}
                     mine={m.senderId === meId}
                     member={memberOf(m.senderId)}
@@ -179,6 +186,14 @@ function Thread({ householdId, conversationId }: { householdId: string; conversa
         onSubmit={onSend}
         className="sticky bottom-0 z-20 flex items-end gap-2 bg-ink px-3 pt-2 pb-[max(0.75rem,var(--safe-bottom))]"
       >
+        <button
+          type="button"
+          onClick={() => setGifsOpen(true)}
+          className="grid h-[50px] shrink-0 place-items-center rounded-full border-[1.5px] border-paper px-3.5 text-sm font-extrabold text-paper transition-transform active:scale-95"
+          aria-label="Send a GIF"
+        >
+          GIF
+        </button>
         <textarea
           rows={1}
           className="field max-h-32 min-h-[50px] resize-none border-paper py-3 [field-sizing:content]"
@@ -193,11 +208,21 @@ function Thread({ householdId, conversationId }: { householdId: string; conversa
           <ArrowUp size={22} strokeWidth={2.5} aria-hidden />
         </button>
       </form>
+
+      <GifPicker
+        householdId={householdId}
+        open={gifsOpen}
+        onClose={() => setGifsOpen(false)}
+        onPick={(gif) => sendGif(gif.id)}
+        meId={meId}
+        isAdmin={members.some((m) => m.userId === meId && m.role === 'admin')}
+      />
     </>
   )
 }
 
 type BubbleProps = {
+  householdId: string
   message: Message
   mine: boolean
   member?: Member
@@ -208,9 +233,10 @@ type BubbleProps = {
   onDelete: () => void
 }
 
-function Bubble({ message: m, mine, member, showName, grouped, selected, onSelect, onDelete }: BubbleProps) {
+function Bubble({ householdId, message: m, mine, member, showName, grouped, selected, onSelect, onDelete }: BubbleProps) {
   const pending = m.id.startsWith('temp-')
   const deleted = !!m.deletedAt
+  const gif = !deleted && m.gifId
 
   return (
     <div className={cn('flex items-end gap-2', mine ? 'justify-end' : 'justify-start', !grouped && 'mt-2')}>
@@ -226,15 +252,27 @@ function Bubble({ message: m, mine, member, showName, grouped, selected, onSelec
           onClick={mine && !deleted && !pending ? onSelect : undefined}
           className={cn(
             'rounded-[1.25rem] px-3.5 py-2 text-left text-[15px] font-medium break-words whitespace-pre-wrap',
-            mine ? 'rounded-br-md bg-ink text-paper' : 'rounded-bl-md border-[1.5px] border-ink bg-paper',
+            // A GIF on its own shows bare, with no bubble behind it
+            gif && !m.body
+              ? 'bg-transparent p-0 text-ink'
+              : mine
+                ? 'rounded-br-md bg-ink text-paper'
+                : 'rounded-bl-md border-[1.5px] border-ink bg-paper',
             deleted && 'italic opacity-50',
             pending && 'opacity-60',
             !mine && 'cursor-default',
           )}
           aria-label={mine && !deleted ? 'Your message. Tap for options' : undefined}
         >
-          {deleted ? 'Message deleted' : m.body}
-          <span className={cn('ml-2 inline-block align-bottom text-[11px] font-semibold', mine ? 'text-paper/60' : 'text-muted-ink')}>
+          {gif && (
+            <GifImage
+              householdId={householdId}
+              mediaId={m.gifId!}
+              className={cn('block max-h-56 w-56 max-w-full rounded-2xl border-[1.5px] border-ink', m.body && 'mb-1.5')}
+            />
+          )}
+          {deleted ? 'Message deleted' : m.body || (!m.gifId && <span className="italic opacity-60">GIF removed</span>)}
+          <span className={cn('ml-2 inline-block align-bottom text-[11px] font-semibold', gif && !m.body ? 'text-muted-ink' : mine ? 'text-paper/60' : 'text-muted-ink')}>
             {pending ? 'Sending…' : formatClock(m.createdAt)}
             {m.editedAt && !deleted && ' · edited'}
           </span>

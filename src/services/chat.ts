@@ -48,16 +48,19 @@ export function useLoadOlder(householdId: string, conversationId: string) {
   })
 }
 
+/** Text, a GIF from the library, or both */
+export type OutgoingMessage = { body?: string; gifId?: string }
+
 export function useSendMessage(householdId: string, conversationId: string) {
   const queryClient = useQueryClient()
   const me = useAuthStore((state) => state.user)
   const key = chatKeys.messages(householdId, conversationId)
 
   return useMutation({
-    mutationFn: async (body: string) =>
-      (await api.post<Message>(`${base(householdId)}/${conversationId}/messages`, { body })).data,
+    mutationFn: async (input: OutgoingMessage) =>
+      (await api.post<Message>(`${base(householdId)}/${conversationId}/messages`, input)).data,
     // Show the message right away with a temporary id; swap it for the real one after.
-    onMutate: async (body) => {
+    onMutate: async ({ body = '', gifId }) => {
       const tempId = 'temp-' + crypto.randomUUID()
       queryClient.setQueryData<Message[]>(key, (list = []) => [
         ...list,
@@ -66,6 +69,7 @@ export function useSendMessage(householdId: string, conversationId: string) {
           conversationId,
           senderId: me?.id ?? null,
           body,
+          gifId: gifId ?? null,
           editedAt: null,
           deletedAt: null,
           createdAt: new Date().toISOString(),

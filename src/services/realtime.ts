@@ -59,8 +59,11 @@ export function useRealtime() {
 
   useEffect(() => {
     if (!token) return
-    const url = String(api.defaults.baseURL ?? 'http://localhost:3000')
-    const s = io(url, { auth: { token }, transports: ['websocket'] })
+    const base = String(api.defaults.baseURL ?? 'http://localhost:3000')
+    // A relative base (dev proxy, e.g. "/api") is a path on this origin; io("/api") would mean a namespace instead.
+    const s = base.startsWith('/')
+      ? io({ path: `${base}/socket.io`, auth: { token }, transports: ['websocket'] })
+      : io(base, { auth: { token }, transports: ['websocket'] })
     socket = s
 
     const upsert = (message: Message) => {

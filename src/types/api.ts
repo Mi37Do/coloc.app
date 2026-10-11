@@ -173,6 +173,8 @@ export type Message = {
   senderId: string | null
   sender?: PublicUser | null
   body: string
+  /** A GIF from the household library (GET /households/:id/gifs) */
+  gifId?: string | null
   editedAt: string | null
   deletedAt: string | null
   createdAt: string

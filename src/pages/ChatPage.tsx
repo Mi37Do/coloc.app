@@ -71,7 +71,7 @@ function ConversationRow({ conversation: c, members, meId }: { conversation: Con
       : 'No messages yet'
     : last.deletedAt
       ? 'Message deleted'
-      : `${isGroup || last.senderId === meId ? `${sender ?? 'Someone'}: ` : ''}${last.body}`
+      : `${isGroup || last.senderId === meId ? `${sender ?? 'Someone'}: ` : ''}${last.body || (last.gifId ? '🎞️ GIF' : 'GIF removed')}`
 
   return (
     <li>
