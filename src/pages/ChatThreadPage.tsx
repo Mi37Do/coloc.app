@@ -1,10 +1,21 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { ArrowLeft, ArrowUp, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowUp, ImagePlus, Trash2 } from 'lucide-react'
+import { BottomSheet } from '@/components/ui/BottomSheet'
+import { chatImagePath, useFileUrl } from '@/services/files'
+import { chooseImages } from '@/utils/images'
 import { toast } from 'sonner'
 import { Avatar, AvatarStack } from '@/components/ui/Avatar'
 import { GifImage, GifPicker } from '@/features/chat/GifPicker'
-import { useConversations, useDeleteMessage, useLoadOlder, useMarkRead, useMessages, useSendMessage } from '@/services/chat'
+import {
+  useConversations,
+  useDeleteMessage,
+  useLoadOlder,
+  useMarkRead,
+  useMessages,
+  useSendMessage,
+  useUploadChatImages,
+} from '@/services/chat'
 import { useActiveHousehold, useMembers } from '@/services/households'
 import { emitTyping, useTypingStore } from '@/services/realtime'
 import { useAuthStore } from '@/stores'
@@ -34,6 +45,8 @@ function Thread({ householdId, conversationId }: { householdId: string; conversa
   const loadOlder = useLoadOlder(householdId, conversationId)
   const remove = useDeleteMessage(householdId, conversationId)
   const [gifsOpen, setGifsOpen] = useState(false)
+  const uploadImages = useUploadChatImages(householdId, conversationId)
+  const [viewing, setViewing] = useState<string>()
   const typingIds = Object.keys(useTypingStore((state) => state.typing[conversationId]) ?? {})
 
   const [text, setText] = useState('')
@@ -72,6 +85,20 @@ function Thread({ householdId, conversationId }: { householdId: string; conversa
   // A GIF goes out on its own; any typed text stays in the box
   const sendGif = (gifId: string) =>
     send.mutate({ gifId }, { onError: (err) => toast.error(apiErrorMessage(err, 'GIF not sent')) })
+
+  // Photos: camera/gallery in the app, file picker in a browser. Each photo is its own message.
+  const sendPhotos = async () => {
+    const files = (await chooseImages({ multiple: true })).slice(0, 10)
+    if (!files.length) return
+    try {
+      const uploaded = await uploadImages.mutateAsync(files)
+      for (const image of uploaded) {
+        send.mutate({ imageId: image.id }, { onError: (err) => toast.error(apiErrorMessage(err, 'Photo not sent')) })
+      }
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Could not upload. Photos up to 10 MB.'))
+    }
+  }
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Enter sends on desktop; Shift+Enter for a new line
@@ -162,6 +189,7 @@ function Thread({ householdId, conversationId }: { householdId: string; conversa
                   )}
                   <Bubble
                     householdId={householdId}
+                    onOpenImage={setViewing}
                     message={m}
                     mine={m.senderId === meId}
                     member={memberOf(m.senderId)}
@@ -188,6 +216,15 @@ function Thread({ householdId, conversationId }: { householdId: string; conversa
       >
         <button
           type="button"
+          onClick={() => void sendPhotos()}
+          disabled={uploadImages.isPending}
+          className="grid size-[50px] shrink-0 place-items-center rounded-full border-[1.5px] border-paper text-paper transition-transform active:scale-95 disabled:animate-pulse"
+          aria-label={uploadImages.isPending ? 'Uploading photos' : 'Send photos'}
+        >
+          <ImagePlus size={20} aria-hidden />
+        </button>
+        <button
+          type="button"
           onClick={() => setGifsOpen(true)}
           className="grid h-[50px] shrink-0 place-items-center rounded-full border-[1.5px] border-paper px-3.5 text-sm font-extrabold text-paper transition-transform active:scale-95"
           aria-label="Send a GIF"
@@ -209,6 +246,10 @@ function Thread({ householdId, conversationId }: { householdId: string; conversa
         </button>
       </form>
 
+      <BottomSheet open={!!viewing} title="Photo" onClose={() => setViewing(undefined)}>
+        {viewing && <ChatImage path={chatImagePath(householdId, conversationId, viewing)} className="max-h-[70dvh] w-full rounded-2xl object-contain" />}
+      </BottomSheet>
+
       <GifPicker
         householdId={householdId}
         open={gifsOpen}
@@ -224,6 +265,7 @@ function Thread({ householdId, conversationId }: { householdId: string; conversa
 type BubbleProps = {
   householdId: string
   message: Message
+  onOpenImage: (imageId: string) => void
   mine: boolean
   member?: Member
   showName: boolean
@@ -233,10 +275,12 @@ type BubbleProps = {
   onDelete: () => void
 }
 
-function Bubble({ householdId, message: m, mine, member, showName, grouped, selected, onSelect, onDelete }: BubbleProps) {
+function Bubble({ householdId, message: m, onOpenImage, mine, member, showName, grouped, selected, onSelect, onDelete }: BubbleProps) {
   const pending = m.id.startsWith('temp-')
   const deleted = !!m.deletedAt
   const gif = !deleted && m.gifId
+  const image = !deleted && m.imageId
+  const bare = (gif || image) && !m.body
 
   return (
     <div className={cn('flex items-end gap-2', mine ? 'justify-end' : 'justify-start', !grouped && 'mt-2')}>
@@ -253,7 +297,7 @@ function Bubble({ householdId, message: m, mine, member, showName, grouped, sele
           className={cn(
             'rounded-[1.25rem] px-3.5 py-2 text-left text-[15px] font-medium break-words whitespace-pre-wrap',
             // A GIF on its own shows bare, with no bubble behind it
-            gif && !m.body
+            bare
               ? 'bg-transparent p-0 text-ink'
               : mine
                 ? 'rounded-br-md bg-ink text-paper'
@@ -264,6 +308,24 @@ function Bubble({ householdId, message: m, mine, member, showName, grouped, sele
           )}
           aria-label={mine && !deleted ? 'Your message. Tap for options' : undefined}
         >
+          {image && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenImage(m.imageId!)
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && onOpenImage(m.imageId!)}
+              className="block cursor-zoom-in"
+              aria-label="Open photo"
+            >
+              <ChatImage
+                path={chatImagePath(householdId, m.conversationId, m.imageId!)}
+                className={cn('block max-h-72 w-60 max-w-full rounded-2xl border-[1.5px] border-ink object-cover', m.body && 'mb-1.5')}
+              />
+            </span>
+          )}
           {gif && (
             <GifImage
               householdId={householdId}
@@ -271,8 +333,8 @@ function Bubble({ householdId, message: m, mine, member, showName, grouped, sele
               className={cn('block max-h-56 w-56 max-w-full rounded-2xl border-[1.5px] border-ink', m.body && 'mb-1.5')}
             />
           )}
-          {deleted ? 'Message deleted' : m.body || (!m.gifId && <span className="italic opacity-60">GIF removed</span>)}
-          <span className={cn('ml-2 inline-block align-bottom text-[11px] font-semibold', gif && !m.body ? 'text-muted-ink' : mine ? 'text-paper/60' : 'text-muted-ink')}>
+          {deleted ? 'Message deleted' : m.body || (!m.gifId && !m.imageId && <span className="italic opacity-60">GIF removed</span>)}
+          <span className={cn('ml-2 inline-block align-bottom text-[11px] font-semibold', bare ? 'text-muted-ink' : mine ? 'text-paper/60' : 'text-muted-ink')}>
             {pending ? 'Sending…' : formatClock(m.createdAt)}
             {m.editedAt && !deleted && ' · edited'}
           </span>
@@ -285,4 +347,10 @@ function Bubble({ householdId, message: m, mine, member, showName, grouped, sele
       </div>
     </div>
   )
+}
+
+function ChatImage({ path, className }: { path: string; className?: string }) {
+  const { url, failed } = useFileUrl(path)
+  if (failed) return <span className={cn('grid min-h-24 place-items-center bg-ivory text-xs font-bold text-muted-ink', className)}>Photo unavailable</span>
+  return url ? <img src={url} alt="Photo" className={className} /> : <span className={cn('block min-h-40 animate-pulse bg-ivory', className)} aria-busy="true" />
 }

@@ -7,6 +7,8 @@ export type User = {
   lastname: string
   email: string
   emailVerified: boolean
+  /** Set when the user has a profile picture (GET /users/:id/avatar) */
+  avatarUpdatedAt?: string | null
 }
 
 export type AuthResponse = {
@@ -66,7 +68,7 @@ export type Chore = {
   title: string
   description: string | null
   assigneeId: string | null
-  assignee: Pick<User, 'id' | 'username' | 'firstname' | 'lastname'> | null
+  assignee: PublicUser | null
   dueAt: string | null
   recurrence: ChoreRecurrence
   rotateAssignee: boolean
@@ -76,7 +78,7 @@ export type Chore = {
   createdById: string | null
 }
 
-export type PublicUser = Pick<User, 'id' | 'username' | 'firstname' | 'lastname'>
+export type PublicUser = Pick<User, 'id' | 'username' | 'firstname' | 'lastname' | 'avatarUpdatedAt'>
 
 /** GET /households/:id/members (active members, oldest first) */
 export type Member = {
@@ -175,6 +177,8 @@ export type Message = {
   body: string
   /** A GIF from the household library (GET /households/:id/gifs) */
   gifId?: string | null
+  /** A photo sent in this chat (GET .../conversations/:id/images/:imageId/file) */
+  imageId?: string | null
   editedAt: string | null
   deletedAt: string | null
   createdAt: string

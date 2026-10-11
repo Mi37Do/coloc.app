@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
+import { forgetFiles, mediaPath, useFileUrl } from './files'
 import type { Media } from '@/types/api'
 
 export const gifKeys = {
@@ -41,50 +41,13 @@ export function useRemoveGif(householdId: string) {
       await api.delete(`/households/${householdId}/media/${mediaId}`)
     },
     onSuccess: (_d, mediaId) => {
-      forgetMedia(mediaId)
+      forgetFiles(mediaId)
       return queryClient.invalidateQueries({ queryKey: gifKeys.library(householdId) })
     },
   })
 }
 
-// Media files need the auth header, so <img src> can't load them directly. The same GIF shows
-// up many times (picker + every message using it), so each file is fetched once and kept as an
-// object URL for the session.
-const cache = new Map<string, Promise<string>>()
-
-function loadMedia(householdId: string, mediaId: string) {
-  let entry = cache.get(mediaId)
-  if (!entry) {
-    entry = api
-      .get<Blob>(`/households/${householdId}/media/${mediaId}/file`, { responseType: 'blob' })
-      .then(({ data }) => URL.createObjectURL(data))
-    entry.catch(() => cache.delete(mediaId)) // retry next time
-    cache.set(mediaId, entry)
-  }
-  return entry
-}
-
-function forgetMedia(mediaId: string) {
-  const entry = cache.get(mediaId)
-  cache.delete(mediaId)
-  void entry?.then(URL.revokeObjectURL).catch(() => {})
-}
-
-/** Object URL for a media file, or undefined while loading / if it's gone */
+/** Object URL for a household media file (GIFs) */
 export function useCachedMediaUrl(householdId: string, mediaId: string | null | undefined) {
-  const [url, setUrl] = useState<string>()
-  const [failed, setFailed] = useState(false)
-  useEffect(() => {
-    if (!mediaId) return
-    let active = true
-    setFailed(false)
-    loadMedia(householdId, mediaId).then(
-      (u) => active && setUrl(u),
-      () => active && setFailed(true),
-    )
-    return () => {
-      active = false
-    }
-  }, [householdId, mediaId])
-  return { url, failed }
+  return useFileUrl(mediaId ? mediaPath(householdId, mediaId) : null)
 }

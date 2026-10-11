@@ -1,6 +1,7 @@
+import { avatarPath, useFileUrl } from '@/services/files'
 import { cn } from '@/utils/cn'
 
-type Person = { id: string; firstname: string; lastname: string }
+type Person = { id: string; firstname: string; lastname: string; avatarUpdatedAt?: string | null }
 
 // Soft tints from the palette, picked from the user id so a person keeps their colour.
 const tints = ['bg-sage', 'bg-sky', 'bg-butter', 'bg-blush', 'bg-mint']
@@ -15,17 +16,19 @@ const sizes = { sm: 'size-8 text-xs', md: 'size-11 text-sm', lg: 'size-14 text-l
 
 export function Avatar({ person, size = 'md', className }: { person: Person; size?: keyof typeof sizes; className?: string }) {
   const initials = (person.firstname[0] ?? '') + (person.lastname[0] ?? '')
+  // Profile picture when there is one; initials show while it loads or if it fails
+  const { url } = useFileUrl(person.avatarUpdatedAt ? avatarPath(person.id, person.avatarUpdatedAt) : null)
   return (
     <span
       className={cn(
-        'grid shrink-0 place-items-center rounded-full border-2 border-ink font-extrabold text-ink',
+        'grid shrink-0 place-items-center overflow-hidden rounded-full border-2 border-ink font-extrabold text-ink',
         tintFor(person.id),
         sizes[size],
         className,
       )}
       aria-hidden
     >
-      {initials.toUpperCase()}
+      {url ? <img src={url} alt="" className="size-full object-cover" /> : initials.toUpperCase()}
     </span>
   )
 }

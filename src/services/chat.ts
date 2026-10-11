@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
 import { useAuthStore } from '@/stores'
-import type { Conversation, Message } from '@/types/api'
+import type { Conversation, Media, Message } from '@/types/api'
 
 const base = (householdId: string) => `/households/${householdId}/conversations`
 const PAGE = 50
@@ -48,8 +48,8 @@ export function useLoadOlder(householdId: string, conversationId: string) {
   })
 }
 
-/** Text, a GIF from the library, or both */
-export type OutgoingMessage = { body?: string; gifId?: string }
+/** Text, a GIF from the library, a photo uploaded to the chat, or a mix */
+export type OutgoingMessage = { body?: string; gifId?: string; imageId?: string }
 
 export function useSendMessage(householdId: string, conversationId: string) {
   const queryClient = useQueryClient()
@@ -60,7 +60,7 @@ export function useSendMessage(householdId: string, conversationId: string) {
     mutationFn: async (input: OutgoingMessage) =>
       (await api.post<Message>(`${base(householdId)}/${conversationId}/messages`, input)).data,
     // Show the message right away with a temporary id; swap it for the real one after.
-    onMutate: async ({ body = '', gifId }) => {
+    onMutate: async ({ body = '', gifId, imageId }) => {
       const tempId = 'temp-' + crypto.randomUUID()
       queryClient.setQueryData<Message[]>(key, (list = []) => [
         ...list,
@@ -70,6 +70,7 @@ export function useSendMessage(householdId: string, conversationId: string) {
           senderId: me?.id ?? null,
           body,
           gifId: gifId ?? null,
+          imageId: imageId ?? null,
           editedAt: null,
           deletedAt: null,
           createdAt: new Date().toISOString(),
@@ -86,6 +87,21 @@ export function useSendMessage(householdId: string, conversationId: string) {
     onError: (_e, _body, context) =>
       queryClient.setQueryData<Message[]>(key, (list = []) => list.filter((m) => m.id !== context?.tempId)),
     onSettled: () => queryClient.invalidateQueries({ queryKey: chatKeys.conversations(householdId), exact: true }),
+  })
+}
+
+/** Uploads photos to a chat; send each returned id as a message's imageId */
+export function useUploadChatImages(householdId: string, conversationId: string) {
+  return useMutation({
+    mutationFn: async (files: File[]) => {
+      const form = new FormData()
+      for (const f of files) form.append('files', f)
+      return (
+        await api.post<Media[]>(`${base(householdId)}/${conversationId}/images`, form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      ).data
+    },
   })
 }
 

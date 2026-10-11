@@ -6,6 +6,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { TopPanel } from '@/components/ui/TopPanel'
+import { AvatarEditor } from '@/features/profile/AvatarEditor'
 import { useHouseholds } from '@/services/households'
 import { unregisterPush } from '@/services/push'
 import { useAuthStore } from '@/stores'
@@ -36,7 +37,7 @@ export function ProfilePage() {
           </>
         }
       >
-        <Avatar person={user} size="lg" className="size-20 text-2xl" />
+        <AvatarEditor user={user} />
         <div>
           <h1 className="font-display text-[28px] leading-tight">
             {user.firstname} {user.lastname}
