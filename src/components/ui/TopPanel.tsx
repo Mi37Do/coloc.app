@@ -6,6 +6,8 @@ type Props = {
   tone?: 'mint' | 'sky' | 'butter' | 'blush'
   /** The compact app bar shown once the panel scrolls away (avatar, title, actions) */
   bar: ReactNode
+  /** Extra content pinned under the bar row (e.g. the week strip), stays visible while scrolling */
+  extra?: ReactNode
   /** The full panel content */
   children: ReactNode
   className?: string
@@ -20,8 +22,9 @@ const SWITCH_AFTER = 24
  * scrolling, a compact app bar of the same colour slides in over it, rounded only
  * at the bottom. The full panel never changes size, so scrolling doesn't jump.
  */
-export function TopPanel({ tone = 'mint', bar, children, className }: Props) {
+export function TopPanel({ tone = 'mint', bar, extra, children, className }: Props) {
   const ref = useRef<HTMLElement>(null)
+  const barRef = useRef<HTMLDivElement>(null)
   const [stuck, setStuck] = useState(false)
 
   useEffect(() => {
@@ -37,10 +40,24 @@ export function TopPanel({ tone = 'mint', bar, children, className }: Props) {
       if (!frame) frame = requestAnimationFrame(update)
     }
     update()
-    window.addEventListener('scroll', onScroll, { passive: true })
+    // capture: pages scroll inside <main>, not the window
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true })
     return () => {
-      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('scroll', onScroll, { capture: true })
       cancelAnimationFrame(frame)
+    }
+  }, [])
+
+  // Publish the bar's height so content can stop below it (--top-bar-h)
+  useEffect(() => {
+    const el = barRef.current
+    if (!el) return
+    const root = document.documentElement
+    const observer = new ResizeObserver(() => root.style.setProperty('--top-bar-h', `${el.offsetHeight}px`))
+    observer.observe(el)
+    return () => {
+      observer.disconnect()
+      root.style.removeProperty('--top-bar-h')
     }
   }, [])
 
@@ -60,13 +77,16 @@ export function TopPanel({ tone = 'mint', bar, children, className }: Props) {
         aria-hidden={!stuck}
       >
         <div
+          ref={barRef}
           className={cn(
-            'flex items-center gap-3 rounded-b-panel px-5 pt-[max(0.75rem,var(--safe-top))] pb-3 shadow-[0_8px_24px_rgb(11_11_11/14%)]',
+            'rounded-b-panel px-5 pt-[max(0.75rem,var(--safe-top))] pb-3 shadow-[0_8px_24px_rgb(11_11_11/14%)]',
             `panel--${tone}`,
           )}
-          style={{ minHeight: BAR_HEIGHT }}
         >
-          {bar}
+          <div className="flex items-center gap-3" style={{ minHeight: BAR_HEIGHT - 24 }}>
+            {bar}
+          </div>
+          {extra}
         </div>
       </div>
     </>

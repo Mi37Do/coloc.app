@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "coloc.app"
+    namespace = "com.coloc.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "coloc.app"
+        applicationId "com.coloc.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -1,7 +1,7 @@
 import { App } from '@capacitor/app'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { Clipboard } from '@capacitor/clipboard'
-import { Capacitor, SystemBars, SystemBarsStyle, SystemBarType } from '@capacitor/core'
+import { Capacitor } from '@capacitor/core'
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics'
 import { Keyboard } from '@capacitor/keyboard'
 import { Network } from '@capacitor/network'
@@ -30,20 +30,19 @@ export function deepLinkToPath(url: string): string | null {
   return match ? `/join/${match[1]}` : null
 }
 
-/** Sets up system bars, keyboard, Android back button and deep links. Call once at startup. */
-export function initNative(router: DataRouter) {
+/**
+ * Native-only setup (Android): back button and invite deep links. Safe to call in the browser.
+ * System bar insets and icon colours are handled by @capacitor-community/safe-area (see capacitor.config.ts).
+ */
+export function setupNative(router: DataRouter) {
   if (!isNative) return
-
-  // Edge-to-edge: the page draws under the bars, so only the icon colours are set here.
-  // Status bar sits on the mint header (dark icons); the gesture bar sits on the black tab bar (light icons).
-  void SystemBars.setStyle({ style: SystemBarsStyle.Light, bar: SystemBarType.StatusBar }).catch(() => {})
-  void SystemBars.setStyle({ style: SystemBarsStyle.Dark, bar: SystemBarType.NavigationBar }).catch(() => {})
+  document.documentElement.classList.add('native')
   void Keyboard.setAccessoryBarVisible({ isVisible: false }).catch(() => {})
 
-  // Android back: go back a screen; leave the app only from the first screens
+  // Android back: go back a screen; from the first screens, minimise the app instead of closing it
   void App.addListener('backButton', () => {
     const { pathname } = router.state.location
-    if (pathname === '/' || pathname === '/login') void App.exitApp()
+    if (pathname === '/' || pathname === '/login') void App.minimizeApp()
     else void router.navigate(-1)
   })
 

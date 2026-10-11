@@ -1,11 +1,11 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
-import { hideSplash, initNative } from '@/lib/native'
+import { hideSplash, setupNative } from '@/lib/native'
 import { router } from '@/router'
 import './assets/main.css'
 
-initNative(router)
+setupNative(router)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

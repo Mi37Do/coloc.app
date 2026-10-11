@@ -4,6 +4,7 @@ import { CalendarDays, House, MessageCircle, Plus, Settings } from 'lucide-react
 import { AddChoreSheet } from '@/features/chores'
 import { useActiveHousehold } from '@/services/households'
 import { useOnline } from '@/lib/use-online'
+import { usePushNotifications } from '@/services/push'
 import { useRealtime } from '@/services/realtime'
 import { useUiStore } from '@/stores'
 import { cn } from '@/utils/cn'
@@ -32,6 +33,7 @@ export function AppLayout() {
 
   useRealtime()
   const online = useOnline()
+  usePushNotifications()
   const { active } = useActiveHousehold()
   const addChoreOpen = useUiStore((state) => state.addChoreOpen)
   const setAddChoreOpen = useUiStore((state) => state.setAddChoreOpen)
@@ -39,11 +41,11 @@ export function AppLayout() {
   return (
     <div className="canvas">
       {!online && (
-        <p role="status" className="sticky top-0 z-40 bg-blush px-4 pt-[max(0.5rem,var(--safe-top))] pb-2 text-center text-sm font-bold">
+        <p role="status" className="z-40 shrink-0 bg-blush px-4 pt-[max(0.5rem,var(--safe-top))] pb-2 text-center text-sm font-bold">
           You're offline. Changes will load when you're back.
         </p>
       )}
-      <main className="flex flex-1 flex-col gap-1.5">
+      <main className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
         <Outlet />
       </main>
 

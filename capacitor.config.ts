@@ -1,39 +1,29 @@
+/// <reference types="@capacitor-community/safe-area" />
+/// <reference types="@capacitor/push-notifications" />
+/// <reference types="@capacitor/splash-screen" />
+/// <reference types="@capacitor/keyboard" />
 import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
-  appId: 'coloc.app',
+  // Must match package_name in google-services.json
+  appId: 'com.coloc.app',
   appName: 'coloc',
-  // Vite's build output
   webDir: 'dist',
   backgroundColor: '#D8ECC2',
-  server: {
-    // Serve the app from https://localhost so cookies/storage behave like a real site
-    androidScheme: 'https',
-    // The dev API runs over plain http on your network. Remove for a production https API.
-    cleartext: true,
-  },
   android: {
-    // The page is https://localhost but the dev API is http: allow it. Remove both for a production https API.
+    // Lets the dev build reach an http:// API (e.g. http://10.0.2.2:3000 from the emulator, or a
+    // Tailscale 100.x address). Remove this and usesCleartextTraffic in AndroidManifest.xml for an https API.
     allowMixedContent: true,
   },
   plugins: {
-    SplashScreen: {
-      // The app hides it itself once the first screen is ready (see src/lib/native.ts)
-      launchAutoHide: false,
-      backgroundColor: '#D8ECC2',
-      showSpinner: false,
-    },
-    Keyboard: {
-      // Shrink the page above the keyboard so the chat box and sheets stay visible
-      resize: 'body',
-    },
-    // Edge-to-edge: the web view draws under the system bars and Capacitor injects
-    // --safe-area-inset-* CSS variables (see src/assets/main.css).
-    SystemBars: {
-      insetsHandling: 'css',
-      // The page already sets viewport-fit=cover; telling Capacitor up front avoids a layout jump
-      initialViewportFitValueHint: 'cover',
-    },
+    // @capacitor-community/safe-area owns insets; the app keeps using env(safe-area-inset-*)
+    SystemBars: { insetsHandling: 'disable' },
+    SafeArea: { statusBarStyle: 'LIGHT', navigationBarStyle: 'DARK' },
+    // resizeOnFullScreen must stay off, it fights the safe-area plugin
+    Keyboard: { resize: 'native' },
+    // The app hides the splash itself once the first screen has rendered (see hideSplash in src/lib/native.ts)
+    SplashScreen: { launchAutoHide: false, backgroundColor: '#D8ECC2', showSpinner: false },
+    PushNotifications: { presentationOptions: ['badge', 'sound', 'alert'] },
   },
 }
 
